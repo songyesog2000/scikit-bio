@@ -167,7 +167,19 @@ def supports_array_api(obj):
     required_methods = ["__array_namespace__"]
     return all(hasattr(obj, method) for method in required_methods)
 
-def _composition_check(mat: Array):
+def _positive_assert(mat: Array):
+    """Check if the input is positive.   
+
+    Parameters
+    ----------
+    mat : array_like of shape (n_compositions, n_components)
+        A matrix of proportions.
+    """
+    xp = aac.array_namespace(mat)
+    if xp.any(mat <= 0):
+            raise ValueError("Input matrix must be positive")
+        
+def _compositional_assert(mat: Array):
     """Check if the input is a valid composition.
 
     Parameters
@@ -177,8 +189,7 @@ def _composition_check(mat: Array):
     """
     axis = -1
     xp = aac.array_namespace(mat)
-    if xp.any(mat < 0):
-        raise ValueError("Cannot have negative proportions")
+            # assert from closure() while it is removed in latest version
     if xp.all(mat == 0, axis=axis).sum() > 0:
         raise ValueError("Input matrix cannot have rows with all zeros")
 
@@ -539,14 +550,13 @@ def clr(mat: Array, validate:bool=True) -> Array:
 
 
     if validate:
-        # assert from closure() while it is removed in latest version
-        if xp.any(mat < 0):
-            raise ValueError("Cannot have negative proportions")
+        # assert from closure() while it is removed in this version (0.6.5-dev)
         if mat.ndim > 2:
             raise ValueError("Input matrix can only have two dimensions or less")
 
-        # check if the input is a composition
-        _composition_check(mat)
+        # check if the input is a positive composition
+        _positive_assert(mat)
+        _compositional_assert(mat)
 
     original_shape = mat.shape
     # squeeze the singleton dimensions
@@ -677,20 +687,11 @@ def ilr(mat:Array, basis:Optional[Array]=None,
             "Input is not supported by array_namespace, converting to numpy array. ",
             UserWarning,
         )
-
         mat = np.asarray(mat)
         xp = aac.array_namespace(mat)
-    if validate:
-        # assert from closure() while it is removed in latest version
-        if xp.any(mat < 0):
-            raise ValueError("Cannot have negative proportions")
-        if mat.ndim > 2:
-            raise ValueError("Input matrix can only have two dimensions or less")
-
-        # check if the input is a composition
-        _composition_check(mat)
 
     mat = clr(mat, validate=validate)
+    
     if basis is None:
         d = mat.shape[-1]
         basis = xp.asarray(_gram_schmidt_basis(d),
@@ -773,6 +774,7 @@ def ilr_inv(mat:Array, basis:Optional[Array]=None,
 
         mat = np.asarray(mat)
         xp = aac.array_namespace(mat)
+        
     if basis is None:
         # dimension d-1 x d basis
         basis = _gram_schmidt_basis(mat.shape[axis] + 1)
@@ -851,21 +853,15 @@ def alr(mat:Array, denominator_idx:int=0, axis:int=-1,
 
     if validate:
         if mat.ndim > 2:
-            warnings.warn(
-                "the input matrix has more than 2 dimensions, \
-                        high dimensional alr is new feature",
-                UserWarning,
-            )
             raise ValueError(
                 f"matrix must be 1d or 2d"
             )
-            # for backward compactibility
         if mat.shape[axis] < 2:
             raise ValueError(
                 f"dimension D{mat.ndim + axis} of the input matrix is singleton"
             )
-        if xp.any(mat <= 0):
-            raise ValueError("Input matrix must be positive")
+        _positive_assert(mat)
+        _compositional_assert(mat)
 
     # no matter (n,) or (n, w, z), it will return n
     N = mat.shape[-1]
@@ -934,28 +930,20 @@ def alr_inv(mat: Array, denominator_idx: int = 0):
         mat = np.asarray(mat)
         xp = aac.array_namespace(mat)
 
-    if mat.ndim > 2:
-        # NOTE: backward compatibility
+    if xp.ndim(mat) > 2:
         raise ValueError("mat must be either 1D or 2D")
-        # warnings.warn(
-        #     "the input matrix has more than 2 dimensions, \
-        #               high dimensional alr is new feature",
-        #     UserWarning,
-        # )
-
 
     if mat.shape[axis] < 2:
         raise ValueError(
             f"dimension D{mat.ndim + axis} of the input matrix is singleton"
         )
 
-    # a reminder for ND-PR:if axis != -1, permutation will be applied
+    # a reminder for the future ND-array-PR:
+    #       if axis != -1, permutation will be applied
     N = mat.shape[-1]+1
     comp = xp.ones(mat.shape[:-1]+ (N,),
                    dtype=mat.dtype,
                    device=mat.device)
-    # NOTE: do we need to take the same implementation as clr_inv?
-    # that is, mat-max(mat, axis=-1, keepdims=True) before exp?
     numerator_indexs = tuple(i for i in range(N) if i != denominator_idx)
 
     if xp.__name__=='jax.numpy':
