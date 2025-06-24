@@ -168,7 +168,7 @@ def supports_array_api(obj):
     return all(hasattr(obj, method) for method in required_methods)
 
 def _positive_assert(mat: Array):
-    """Check if the input is positive.   
+    """Check if the input is positive.
 
     Parameters
     ----------
@@ -178,7 +178,7 @@ def _positive_assert(mat: Array):
     xp = aac.array_namespace(mat)
     if xp.any(mat <= 0):
             raise ValueError("Input matrix must be positive")
-        
+
 def _compositional_assert(mat: Array):
     """Check if the input is a valid composition.
 
@@ -691,7 +691,7 @@ def ilr(mat:Array, basis:Optional[Array]=None,
         xp = aac.array_namespace(mat)
 
     mat = clr(mat, validate=validate)
-    
+
     if basis is None:
         d = mat.shape[-1]
         basis = xp.asarray(_gram_schmidt_basis(d),
@@ -774,7 +774,7 @@ def ilr_inv(mat:Array, basis:Optional[Array]=None,
 
         mat = np.asarray(mat)
         xp = aac.array_namespace(mat)
-        
+
     if basis is None:
         # dimension d-1 x d basis
         basis = _gram_schmidt_basis(mat.shape[axis] + 1)
@@ -930,7 +930,7 @@ def alr_inv(mat: Array, denominator_idx: int = 0):
         mat = np.asarray(mat)
         xp = aac.array_namespace(mat)
 
-    if xp.ndim(mat) > 2:
+    if len(mat.shape) > 2:
         raise ValueError("mat must be either 1D or 2D")
 
     if mat.shape[axis] < 2:
