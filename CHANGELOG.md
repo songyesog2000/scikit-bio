@@ -26,7 +26,7 @@
 * Improved documentation for the `DistanceMatrix` object ([2204](https://github.com/scikit-bio/scikit-bio/pull/2204))
 * Remove autoplotting functionality to enable inplace operations on large in-memory objects, and improve documentation of existing plotting methods ([2216](https://github.com/scikit-bio/scikit-bio/pull/2216), [2223](https://github.com/scikit-bio/scikit-bio/pull/2223))
 * Initiated efforts to add type annotations to scikit-bio's codebase, starting with the `stats.distance` module [2219](https://github.com/scikit-bio/scikit-bio/pull/2219)
-
+* Enhanced compatibility of `closure` and log-ratio transformations (`clr, alr, irl,`) for compositional data. Verified support for PyTorch tensors on GPU as well as backward compatibility with NumPy arrays. ([#2239](https://github.com/scikit-bio/scikit-bio/pull/2239))
 
 ## Version 0.6.3
 
